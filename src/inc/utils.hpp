@@ -175,22 +175,21 @@ namespace utl
             } else {
                 if(!fs::exists(tgt)) {
                     if(opt.verbose) {
-                        std::cout << "Copying " << curFile << " (" << src.extension() << ") ...\n";
+                        std::cout << "Copying " << curFile << "...\n";
                     }
                     totalSize += std::filesystem::file_size(src);
                     totalFiles++;
                     fs::copy(src, tgt);
+                    auto srcTime = fs::last_write_time(src);
+                    fs::last_write_time(tgt, srcTime);
                     if(!sameHash(src, tgt)) {
                         totalErrors++;
                         std::cout << "Error " << src << std::endl;
                     }
                 } else {
-                    bool resync = std::filesystem::file_size(src) != std::filesystem::file_size(tgt);
-                    xxh::hash_t<64> srcHash;
-                    if(!resync) {
-                        srcHash = hash(src.generic_string());
-                        resync = !sameHash(srcHash, tgt);
-                    }
+                    auto srcTime = fs::last_write_time(src);
+                    bool resync = srcTime != fs::last_write_time(tgt);
+
                     if(resync) {
                         if(opt.verbose) {
                             std::cout << "Replacing " << curFile << "...\n";
@@ -199,7 +198,10 @@ namespace utl
                         totalFiles++;
                         fs::remove(tgt);
                         fs::copy(src, tgt);
-                        if(!sameHash(srcHash, tgt)) {
+                        
+                        fs::last_write_time(tgt, srcTime);
+
+                        if(!sameHash(src, tgt)) {
                             totalErrors++;
                             std::cout << "Error " << src << std::endl;
                         }

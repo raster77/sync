@@ -2,6 +2,8 @@
 #include "inc/utils.hpp"
 #include <iostream>
 
+void showUsage();
+
 int main(int argc, char **argv)
 {
     //std::ios_base::sync_with_stdio(false);
@@ -16,15 +18,37 @@ int main(int argc, char **argv)
         .required()
         .help("Target.");
 
-    program.add_argument("--verbose")
+    program.add_argument("-v", "--verbose")
       .help("Increase output verbosity")
       .default_value(true)
       .implicit_value(true);
 
-    std::cout << program << std::endl;
+    try {
+      program.parse_args(argc, argv);
+    }
+    catch (const std::runtime_error& err) {
+      showUsage();
+      return 0;
+    }
 
+    std::string src = program.get<std::string>("-s");
+    std::string tgt = program.get<std::string>("-t");
+    
+    if(!fs::exists(src)) {
+        std::cout << "Error\n" << "Source " << src << " does not exists.";
+        return 0;
+    }
+    
     utl::Options opts;
-    utl::sync("/home/thierry/Téléchargements", "/home/thierry/toto", opts);
+    utl::sync(src, tgt, opts);
 
     return 0;
+}
+
+void showUsage() {
+    std::cout << "Usage : sync -s SOURCE -t TARGET\n";
+    std::cout << "or    : sync --source SOURCE --target TARGET\n";
+    std::cout << "\nSync SOURCE to TARGET.";
+    std::cout << "\nOptions :\n";
+    std::cout << "\t-v, --verbose increase verbosity" << std::endl << std::endl;
 }
